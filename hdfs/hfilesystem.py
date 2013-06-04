@@ -76,7 +76,9 @@ class Hfilesystem(object):
     @param dst The path of destination file.
     @return Returns 0 on success, -1 on error.
     """
-    raise NotImplementedError, "TODO(travis)"
+    if libhdfs.hdfsDelete(self.fs, srcPath, self.fs, dstPath) == 0:
+      return True
+    return False
 
   def delete(self, path):
     """
@@ -110,7 +112,10 @@ class Hfilesystem(object):
     @param fs The configured filesystem handle.
     @return Returns the blocksize; -1 on error.
     """
-    raise NotImplementedError, "TODO(travis)"
+    blocksize = libhdfs.hdfsGetDefaultBlockSize(self.fs)
+    if blocksize == -1:
+      raise HdfsError('Failed to get default block size')
+    return blocksize
 
   def get_used(self):
     """Return the total raw size of all files in the filesystem.
@@ -118,7 +123,10 @@ class Hfilesystem(object):
     @param fs The configured filesystem handle.
     @return Returns the total-size; -1 on error.
     """
-    raise NotImplementedError, "TODO(travis)"
+    used = libhdfs.hdfsGetUsed(self.fs)
+    if used == -1:
+      raise HdfsError('Failed to get size of the file system.')
+    return used
 
   # TODO(travis): Decorate with @exists
   def listdir(self, path):
@@ -181,7 +189,9 @@ class Hfilesystem(object):
     @param path The path of the file.
     @return Returns 0 on success, -1 on error.
     """
-    raise NotImplementedError, "TODO(travis)"
+    if libhdfs.hdfsSetReplication(self.fs, path, replication) == -1:
+      raise HdfsError("Failed to set replication for %s" % path)
+    return True
 
   def stat(self, path):
     """Get file status.

@@ -14,12 +14,16 @@ class HdfsError(Exception):
   def __str__(self):
     return repr(self.value)
 
-if not os.getenv("CLASSPATH"):
-  raise HdfsError('Failed loading libhdfs.so because CLASSPATH environment variable is not set.')
+#if not os.getenv("CLASSPATH"):
+#raise HdfsError('Failed loading libhdfs.so because CLASSPATH environment variable is not set.')
 
 class tObjectKind(Structure):
   _fields_ = [('kObjectKindFile', c_char),
               ('kObjectKindDirectory', c_char)]
+
+class hdfsFile_internal(Structure):
+  _fields_ = [('file', c_void_p),
+              ('type', c_uint16)]
 
 class hdfsFileInfo(Structure):
   _fields_ = [('mKind', tObjectKind),      # file or directory
@@ -33,43 +37,86 @@ class hdfsFileInfo(Structure):
               ('mPermissions', c_short),   # the permissions associated with the file
               ('mLastAccess', tTime)]      # the last access time for the file in seconds
 
-libhdfs = cdll.LoadLibrary('libhdfs.so')
+p = "/home/ishaan/Impala/thirdparty/hadoop-2.0.0-cdh4.3.0/lib/native/libhdfs.so"
+libhdfs = cdll.LoadLibrary(p)
+# new stuff
+#libhdfs.hdfsConnectAsUser.argtypes = [c_char_p, tPort, c_char_p, POINTER(c_char_p), c_int32]
+libhdfs.hdfsConnectAsUser.argtypes = [c_char_p, tPort, c_char_p]
+libhdfs.hdfsConnectAsUser.restype = hdfsFS
+
+libhdfs.hdfsGetWorkingDirectory.argtypes = [hdfsFS, c_char_p, c_int]
+libhdfs.hdfsGetWorkingDirectory.restype = c_char_p
+
+libhdfs.hdfsSetWorkingDirectory.argtypes = [hdfsFS, c_char_p]
+libhdfs.hdfsSetWorkingDirectory.restype = c_int
+
+libhdfs.hdfsFreeFileInfo.argtypes = [POINTER(hdfsFileInfo), c_int]
+
+libhdfs.hdfsFreeHosts.argtypes = [POINTER(POINTER(c_char_p))]
+
+# old stuff
 libhdfs.hdfsAvailable.argtypes = [hdfsFS, hdfsFile]
+
 libhdfs.hdfsChmod.argtypes = [hdfsFS, c_char_p, c_short]
+
 libhdfs.hdfsChown.argtypes = [hdfsFS, c_char_p, c_char_p, c_char_p]
+
 libhdfs.hdfsCloseFile.argtypes = [hdfsFS, hdfsFile]
+
 libhdfs.hdfsConnect.argtypes = [c_char_p, tPort]
 libhdfs.hdfsConnect.restype = hdfsFS
+
 libhdfs.hdfsCopy.argtypes = [hdfsFS, c_char_p, hdfsFS, c_char_p]
+
 libhdfs.hdfsCreateDirectory.argtypes = [hdfsFS, c_char_p]
+
 libhdfs.hdfsDelete.argtypes = [hdfsFS, c_char_p]
+
 libhdfs.hdfsDisconnect.argtypes = [hdfsFS]
+
 libhdfs.hdfsExists.argtypes = [hdfsFS, c_char_p]
+
 libhdfs.hdfsFlush.argtypes = [hdfsFS, hdfsFile]
+
 libhdfs.hdfsGetCapacity.argtypes = [hdfsFS]
 libhdfs.hdfsGetCapacity.restype = tOffset
+
 libhdfs.hdfsGetDefaultBlockSize.argtypes = [hdfsFS]
 libhdfs.hdfsGetDefaultBlockSize.restype = tOffset
+
 libhdfs.hdfsGetPathInfo.argtypes = [hdfsFS, c_char_p]
 libhdfs.hdfsGetPathInfo.restype = POINTER(hdfsFileInfo)
+
 libhdfs.hdfsGetUsed.argtypes = [hdfsFS]
 libhdfs.hdfsGetUsed.restype = tOffset
+
 libhdfs.hdfsListDirectory.argtypes = [hdfsFS, c_char_p, POINTER(c_int)]
 libhdfs.hdfsListDirectory.restype = POINTER(hdfsFileInfo)
+
 libhdfs.hdfsMove.argtypes = [hdfsFS, c_char_p, hdfsFS, c_char_p]
+
 libhdfs.hdfsOpenFile.argtypes = [hdfsFS, c_char_p, c_int, c_int, c_short, tSize]
 libhdfs.hdfsOpenFile.restype = hdfsFile
+
 libhdfs.hdfsPread.argtypes = [hdfsFS, hdfsFile, tOffset, c_void_p, tSize]
 libhdfs.hdfsPread.restype = tSize
+
 libhdfs.hdfsRead.argtypes = [hdfsFS, hdfsFile, c_void_p, tSize]
 libhdfs.hdfsRead.restype = tSize
+
 libhdfs.hdfsRename.argtypes = [hdfsFS, c_char_p, c_char_p]
+
 libhdfs.hdfsSeek.argtypes = [hdfsFS, hdfsFile, tOffset]
+
 libhdfs.hdfsSetReplication.argtypes = [hdfsFS, c_char_p, c_int16]
+
 libhdfs.hdfsTell.argtypes = [hdfsFS, hdfsFile]
 libhdfs.hdfsTell.restype = tOffset
+
 libhdfs.hdfsUtime.argtypes = [hdfsFS, c_char_p, tTime, tTime]
+
 libhdfs.hdfsWrite.argtypes = [hdfsFS, hdfsFile, c_void_p, tSize]
 libhdfs.hdfsWrite.restype = tSize
+
 libhdfs.hdfsGetHosts.restype = POINTER(POINTER(c_char_p))
 libhdfs.hdfsGetHosts.argtypes = [hdfsFS, c_char_p, tOffset, tOffset]
